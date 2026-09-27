@@ -11,9 +11,19 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      CAPACITOR_SERVER_URL: ${{ vars.CAPACITOR_SERVER_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Extract original workspace
+        run: |
+          mkdir -p .build/source
+          unzip -q source/grok-workspace-1.zip -d .build/source
+          shopt -s dotglob
+          cp -a .build/source/. ./
+          rm -rf .build
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -31,14 +41,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Capacitor packages
+      - name: Install Capacitor
         run: npm install --no-save @capacitor/core @capacitor/cli @capacitor/android
 
-      - name: Build web application
+      - name: Verify production build
         run: npm run build
 
+      - name: Validate Android target URL
+        run: |
+          if [ -z "$CAPACITOR_SERVER_URL" ]; then
+            echo "::error::Repository variable CAPACITOR_SERVER_URL is not set."
+            echo "Set it to the deployed HTTPS URL of the app before building the Android APK."
+            exit 1
+          fi
+
       - name: Create Android project
-        run: npx cap add android
+        run: npx cap add android --no-interactive
 
       - name: Sync Capacitor
         run: npx cap sync android
