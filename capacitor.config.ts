@@ -1,13 +1,21 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
+const remoteUrl = process.env.CAPACITOR_SERVER_URL?.trim();
+
 const config: CapacitorConfig = {
   appId: "com.aghil.echresh.apk",
   appName: "APK Project",
-  webDir: ".output/public",
+  webDir: "public",
   bundledWebRuntime: false,
-  server: {
-    androidScheme: "https",
-  },
+  ...(remoteUrl
+    ? {
+        server: {
+          url: remoteUrl,
+          androidScheme: "https",
+          cleartext: false,
+        },
+      }
+    : {}),
 };
 
 export default config;
