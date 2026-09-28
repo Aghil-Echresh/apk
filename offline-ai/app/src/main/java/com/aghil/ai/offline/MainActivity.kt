@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable private fun OfflineChat() {
-        val engine = remember { AiChat.getInferenceEngine(this@MainActivity) }
+        val engine = AiChat.getInferenceEngine(this@MainActivity)
         val scope = rememberCoroutineScope()
         var input by remember { mutableStateOf("") }
         var loaded by remember { mutableStateOf(false) }
