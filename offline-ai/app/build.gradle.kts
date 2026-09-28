@@ -21,13 +21,6 @@ android {
         }
     }
 
-    externalNativeBuild {
-        cmake {
-            path = file("../llama-android/src/main/cpp/CMakeLists.txt")
-            version = "3.31.6"
-        }
-    }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
