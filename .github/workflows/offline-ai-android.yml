@@ -51,7 +51,7 @@ jobs:
           gradle-version: '8.13'
 
       - name: Fetch llama.cpp
-        run: ./scripts/bootstrap-llama.sh
+        run: bash ./scripts/bootstrap-llama.sh
 
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon --stacktrace
