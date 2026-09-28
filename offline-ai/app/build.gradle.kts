@@ -3,16 +3,31 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+
 android {
     namespace = "com.aghil.ai.offline"
     compileSdk = 36
+    ndkVersion = "29.0.13113456"
+
     defaultConfig {
         applicationId = "com.aghil.ai.offline"
         minSdk = 33
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
+
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
     }
+
+    externalNativeBuild {
+        cmake {
+            path = file("../llama-android/src/main/cpp/CMakeLists.txt")
+            version = "3.31.6"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -20,6 +35,7 @@ android {
     kotlin { jvmToolchain(17) }
     packaging { jniLibs { useLegacyPackaging = true } }
 }
+
 dependencies {
     implementation(project(":llama-android"))
     implementation("androidx.activity:activity-compose:1.12.2")
