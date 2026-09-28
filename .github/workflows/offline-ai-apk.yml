@@ -48,7 +48,7 @@ jobs:
           sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0" "cmake;3.31.6" "ndk;29.0.13113456"
 
       - name: Bootstrap llama.cpp
-        run: ./scripts/bootstrap-llama.sh
+        run: bash ./scripts/bootstrap-llama.sh
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
