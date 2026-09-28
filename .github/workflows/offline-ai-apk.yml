@@ -34,6 +34,14 @@ jobs:
       - name: Bootstrap llama.cpp
         run: ./scripts/bootstrap-llama.sh
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Generate Gradle wrapper
+        run: gradle wrapper --gradle-version 8.13
+
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
