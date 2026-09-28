@@ -1,4 +1,5 @@
 name: Build Offline AI APK
+# CI for the standalone Android + llama.cpp offline AI app.
 
 on:
   push:
