@@ -48,3 +48,5 @@ jobs:
           )
           print(f"Space: https://huggingface.co/spaces/{repo_id}")
           PY
+
+# Retrigger after HF_TOKEN was added to GitHub Actions secrets.
