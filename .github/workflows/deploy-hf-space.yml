@@ -23,7 +23,12 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          test -n "$HF_TOKEN" || { echo "HF_TOKEN GitHub secret is required"; exit 1; }
+          if [ -z "$HF_TOKEN" ]; then
+            echo "::warning::HF_TOKEN is not configured; skipping Hugging Face deployment."
+            echo "Add repository secret HF_TOKEN to enable deployment."
+            exit 0
+          fi
+
           python - <<'PY'
           import os
           from huggingface_hub import HfApi
@@ -48,5 +53,3 @@ jobs:
           )
           print(f"Space: https://huggingface.co/spaces/{repo_id}")
           PY
-
-# Retrigger after HF_TOKEN was added to GitHub Actions secrets.
