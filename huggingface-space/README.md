@@ -1,25 +1,18 @@
 ---
-title: Qwen2.5 Coder 3B GGUF Demo
+title: Qwen2.5-Coder 3B GGUF API
 emoji: 🤖
-colorFrom: blue
+colorFrom: indigo
 colorTo: purple
 sdk: gradio
 app_file: app.py
 pinned: false
 ---
 
-# Qwen2.5-Coder 3B GGUF Demo
+# Qwen2.5-Coder 3B GGUF
 
-A Gradio demo for:
+Gradio chat UI plus an OpenAI-compatible FastAPI endpoint for the web client.
 
-**bocalan/Qwen2.5-Coder-3B-Instruct-Q4_K_M-GGUF**
-
-Runtime:
-
-- llama.cpp via llama-cpp-python
-- GGUF Q4_K_M
-- Hugging Face Hub model download
-- Gradio chat UI
-- Persian/English prompts supported
-
-The model is downloaded at Space startup from the Hugging Face model repository.
+Endpoints:
+- `/health`
+- `/v1/models`
+- `/v1/chat/completions`
