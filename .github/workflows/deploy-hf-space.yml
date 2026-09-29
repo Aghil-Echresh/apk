@@ -1,0 +1,50 @@
+name: Deploy Hugging Face Space
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "huggingface-space/**"
+      - ".github/workflows/deploy-hf-space.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Hugging Face Hub
+        run: python -m pip install --upgrade huggingface_hub
+
+      - name: Create or update Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          test -n "$HF_TOKEN" || { echo "HF_TOKEN GitHub secret is required"; exit 1; }
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+
+          token = os.environ["HF_TOKEN"]
+          api = HfApi(token=token)
+          me = api.whoami()
+          username = me["name"]
+          repo_id = f"{username}/qwen25-coder-3b-gguf-demo"
+
+          api.create_repo(
+              repo_id=repo_id,
+              repo_type="space",
+              space_sdk="gradio",
+              exist_ok=True,
+          )
+          api.upload_folder(
+              repo_id=repo_id,
+              repo_type="space",
+              folder_path="huggingface-space",
+              commit_message="Deploy Qwen2.5-Coder GGUF demo",
+          )
+          print(f"Space: https://huggingface.co/spaces/{repo_id}")
+          PY
