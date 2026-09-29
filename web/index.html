@@ -1,17 +1,8 @@
 <!doctype html>
-<html lang="fa" dir="rtl">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#111827"><meta name="description" content="APK project web AI chat">
-<link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="style.css">
-<title>Qwen GGUF • Web AI</title>
-</head>
-<body>
-<div class="app">
-<header><div><strong>🤖 Qwen GGUF</strong><span>نسخه وب پروژه APK</span></div><button id="settingsBtn" class="icon">⚙️</button></header>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827"><meta name="description" content="Qwen GGUF Web AI">
+<link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="style.css"><title>Qwen GGUF • Web AI</title></head>
+<body><div class="app"><header><div><strong>🤖 Qwen GGUF</strong><span>نسخه وب پروژه APK</span></div><button id="settingsBtn" class="icon" aria-label="تنظیمات">⚙️</button></header>
 <main id="chat" class="chat"><section class="welcome"><div class="logo">✦</div><h1>سلام عقیل 👋</h1><p>چت هوش مصنوعی پروژه‌ات، این بار داخل مرورگر.</p><div class="chips"><button>یک API با FastAPI بساز</button><button>این کد JavaScript را توضیح بده</button><button>یک صفحه ورود Responsive بساز</button></div></section></main>
-<form id="composer"><textarea id="input" rows="1" placeholder="پیامت را بنویس..." autocomplete="off"></textarea><button id="send" type="submit">➤</button></form>
-</div>
-<dialog id="settings"><form method="dialog"><h2>تنظیمات اتصال</h2><label>API URL<input id="apiUrl" value="http://127.0.0.1:8080/v1/chat/completions"></label><label>Model<input id="model" value="qwen2.5-coder"></label><p>برای Worker/سرور آنلاین، API URL را به endpoint سازگار با OpenAI تغییر بده.</p><menu><button>بستن</button><button id="save" value="default">ذخیره</button></menu></form></dialog>
-<script src="app.js"></script>
-</body></html>
+<form id="composer"><textarea id="input" rows="1" placeholder="پیامت را بنویس..." autocomplete="off"></textarea><button id="send" type="submit" aria-label="ارسال">➤</button></form></div>
+<dialog id="settings"><form method="dialog"><h2>تنظیمات اتصال</h2><label>API URL<input id="apiUrl" value="https://aghill-apk.hf.space/v1/chat/completions"></label><label>Model<input id="model" value="qwen2.5-coder"></label><p>اتصال پیش‌فرض به Space پروژه است. اگر Worker دیگری داری، API URL را عوض کن.</p><menu><button>بستن</button><button id="save" value="default">ذخیره</button></menu></form></dialog><script src="app.js"></script></body></html>

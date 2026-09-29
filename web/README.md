@@ -1,11 +1,10 @@
 # Web version
 
-This folder is a static browser client for the APK project's AI backend.
+Browser → GitHub Pages → Hugging Face Space → llama.cpp → Qwen2.5-Coder-3B GGUF
 
-## Run
-Open `web/index.html` through a static web server or deploy the folder to GitHub Pages, Hugging Face Spaces (static hosting), Cloudflare Pages, Vercel, etc.
+Default API: `https://aghill-apk.hf.space/v1/chat/completions`
 
-## API
-The UI sends OpenAI-compatible POST requests to `/v1/chat/completions` and defaults to `http://127.0.0.1:8080/v1/chat/completions`. Change it in Settings for a deployed GGUF/llama.cpp Worker.
+The Space exposes `/health`, `/v1/models`, and `/v1/chat/completions` with browser CORS enabled. The Android/offline-ai project remains separate.
 
-The backend must allow browser CORS requests. The Android/offline-ai folder is intentionally untouched.
+GitHub Pages deployment is provided by `.github/workflows/web-pages.yml`.
+The first Space start can be slow because the GGUF file is downloaded and loaded.
