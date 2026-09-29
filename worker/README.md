@@ -2,28 +2,36 @@
 
 A local, free GitHub coding worker powered by a GGUF model through llama.cpp.
 
-## Architecture
+## Connected model
 
-GitHub repository -> local Worker -> llama.cpp OpenAI-compatible server -> GGUF model
+The worker is configured for **Qwen2.5-Coder-3B-Instruct-Q4_K_M GGUF** through the local `llama-server` OpenAI-compatible API.
 
-The worker reads repository files, asks the local model for a structured change plan, and writes approved changes to a new Git branch. It never writes directly to main.
+Architecture:
+
+GitHub repository -> local Worker -> llama.cpp `llama-server` -> Qwen2.5-Coder-3B GGUF
+
+The worker reads repository files, asks the local model for a structured change plan, and writes approved changes to a new Git branch. It never writes directly to `main`.
 
 ## Requirements
 
 - Python 3.10+
 - llama.cpp `llama-server`
-- A GGUF coding model such as Qwen2.5-Coder 3B
+- Qwen2.5-Coder-3B-Instruct-Q4_K_M GGUF
 - A GitHub fine-grained token with repository Contents read/write permission
 
 No paid AI API is required.
 
-## Start llama.cpp
+## Start Qwen GGUF
+
+From the directory containing the GGUF file:
 
 ```bash
-./llama-server -m ./models/qwen2.5-coder-3b-instruct-q4_k_m.gguf --host 127.0.0.1 --port 8080 -c 4096
+./llama-server -m ./qwen2.5-coder-3b-instruct-q4_k_m.gguf --alias qwen2.5-coder-3b --host 127.0.0.1 --port 8080 -c 4096
 ```
 
-## Install
+The `--alias` value must match `LLAMA_MODEL=qwen2.5-coder-3b` in `.env`.
+
+## Install Worker
 
 ```bash
 cd worker
@@ -34,6 +42,16 @@ cp .env.example .env
 ```
 
 Put the GitHub token in `.env`. Never commit `.env`.
+
+## Test the model connection
+
+With `llama-server` running on `127.0.0.1:8080`:
+
+```bash
+curl http://127.0.0.1:8080/v1/models
+```
+
+The response should expose the `qwen2.5-coder-3b` model alias.
 
 ## Dry run
 
@@ -52,3 +70,7 @@ The worker creates a branch named `worker/...` and writes the proposed files the
 ## Security model
 
 The model cannot execute shell commands. It only proposes complete file contents. The worker rejects absolute paths and `..` traversal, does not send the GitHub token to llama.cpp, and does not write to `main`.
+
+## GitHub Actions
+
+The included Actions workflow validates Python syntax. It does **not** try to reach `127.0.0.1:8080`, because GitHub-hosted runners cannot access the llama-server running on your local device. The actual GGUF Worker is intentionally local and free.
