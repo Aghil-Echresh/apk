@@ -5,7 +5,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from huggingface_hub import hf_hub_download
-from llama_cpp import Llama
 
 MODEL_REPO = "bocalan/Qwen2.5-Coder-3B-Instruct-Q4_K_M-GGUF"
 MODEL_FILE = "qwen2.5-coder-3b-instruct-q4_k_m.gguf"
@@ -26,11 +25,13 @@ def get_model():
         if _llm is not None:
             return _llm
         try:
+            from llama_cpp import Llama
             model_path = hf_hub_download(repo_id=MODEL_REPO, filename=MODEL_FILE)
             _llm = Llama(
                 model_path=model_path,
                 n_ctx=4096,
-                n_threads=max(2, os.cpu_count() or 2),
+                n_threads=max(2, min(os.cpu_count() or 2, 4)),
+                n_batch=128,
                 verbose=False,
             )
             _model_error = None
