@@ -31,55 +31,77 @@ function renderHistory() {
   for (const m of state.messages) if (m.role !== "system") add(m.role, m.content);
 }
 
+function apiBase(url) {
+  return url.replace(/\/v1\/chat\/completions\/?$/, "").replace(/\/$/, "");
+}
+
+async function fetchWithTimeout(url, options = {}, timeout = 20000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function testConnection() {
   const url = apiUrl.value.trim();
   if (!url) return setStatus("offline", "آدرس API تنظیم نشده");
-  setStatus("checking", "در حال بررسی اتصال…");
+  setStatus("checking", "در حال بررسی سلامت API…");
   try {
-    const r = await fetch(url, { method: "OPTIONS" });
-    setStatus(r.ok || r.status === 204 ? "online" : "warning", r.ok ? "اتصال برقرار است" : `HTTP ${r.status}`);
-  } catch {
-    setStatus(navigator.onLine ? "warning" : "offline", navigator.onLine ? "مرورگر آنلاین است، اما API پاسخ نداد" : "حالت آفلاین");
+    const healthUrl = `${apiBase(url)}/health`;
+    const r = await fetchWithTimeout(healthUrl, { method: "GET", cache: "no-store" }, 15000);
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.detail || `HTTP ${r.status}`);
+    setStatus("online", `API آماده است • ${data.model || "مدل متصل"}`);
+  } catch (e) {
+    const reason = e.name === "AbortError" ? "زمان پاسخ تمام شد" : (e.message || "خطای شبکه");
+    setStatus(navigator.onLine ? "warning" : "offline", navigator.onLine ? `API وصل نیست • ${reason}` : "آفلاین");
   }
 }
 
 async function ask(text) {
   document.querySelector(".welcome")?.remove();
-  const user = { role: "user", content: text };
-  state.messages.push(user);
+  state.messages.push({ role: "user", content: text });
   add("user", text);
   const out = add("assistant", "در حال پاسخ‌گویی…");
   const payloadMessages = state.messages.slice(-24);
 
   try {
     setStatus("checking", "در حال ارتباط با مدل…");
-    const r = await fetch(apiUrl.value.trim(), {
+    const url = apiUrl.value.trim();
+    if (!url) throw new Error("آدرس API تنظیم نشده است.");
+
+    const r = await fetchWithTimeout(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
       body: JSON.stringify({
-        model: model.value.trim() || "qwen2.5-coder",
+        model: model.value.trim() || "qwen2.5-coder-3b",
         messages: payloadMessages,
         temperature: Number(temperature.value) || 0.2,
         max_tokens: Number(maxTokens.value) || 1024,
         stream: false
       })
-    });
+    }, 120000);
+
     const data = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(data.detail || data.error?.message || `HTTP ${r.status}`);
+
     const answer = data.choices?.[0]?.message?.content || data.choices?.[0]?.text || "پاسخی دریافت نشد.";
     out.textContent = answer;
     state.messages.push({ role: "assistant", content: answer });
-    state.apiUrl = apiUrl.value.trim();
-    state.model = model.value.trim() || "qwen2.5-coder";
+    state.apiUrl = url;
+    state.model = model.value.trim() || "qwen2.5-coder-3b";
     state.temperature = Number(temperature.value) || 0.2;
     state.maxTokens = Number(maxTokens.value) || 1024;
     saveState(state);
     setStatus("online", "مدل پاسخ داد");
   } catch (e) {
-    out.textContent = `اتصال به AI برقرار نشد.\n\n${e.message}`;
+    out.textContent = `اتصال به AI برقرار نشد.\n\n${e.name === "AbortError" ? "سرور دیر پاسخ داد یا در حال بیدار شدن است." : e.message}`;
     state.messages.pop();
     saveState(state);
-    setStatus(navigator.onLine ? "warning" : "offline", navigator.onLine ? "API در دسترس نیست" : "آفلاین: رابط برنامه در دسترس است");
+    setStatus(navigator.onLine ? "warning" : "offline", navigator.onLine ? "API در دسترس نیست" : "آفلاین: رابط برنامه همچنان فعال است");
   }
 }
 
@@ -101,7 +123,7 @@ document.querySelectorAll(".chips button").forEach(b => b.onclick = () => {
 $("#settingsBtn").onclick = () => settings.showModal();
 $("#save").onclick = () => {
   state.apiUrl = apiUrl.value.trim();
-  state.model = model.value.trim() || "qwen2.5-coder";
+  state.model = model.value.trim() || "qwen2.5-coder-3b";
   state.temperature = Number(temperature.value) || 0.2;
   state.maxTokens = Number(maxTokens.value) || 1024;
   saveState(state);
