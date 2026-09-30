@@ -1,7 +1,7 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
 import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from './config.js';
 const db=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY),$=id=>document.getElementById(id);
-let cats=[],products=[],cart=JSON.parse(localStorage.getItem('komeil-cart')||'[]'),cat=null,user=null,admin=false,signup=false,store={};
+let cats=[],products=[],cart=JSON.parse(localStorage.getItem('komeil-cart')||'[]'),cat=null,user=null,admin=false,store={};
 const money=n=>new Intl.NumberFormat('fa-IR').format(Number(n)||0);
 const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
 function show(id){$(id).showModal()} function hide(id){$(id).close()}
@@ -43,14 +43,11 @@ async function authState(){
  $('auth').textContent=user?'حساب':'ورود';$('orders').hidden=!admin;
 }
 db.auth.onAuthStateChange(()=>authState());
-$('auth').onclick=()=>{if(user){if(admin){show('adminBox')}else{const r=await db.rpc('claim_first_admin');if(r.data){await authState();show('adminBox');await loadAdmin()}else alert('مدیر فروشگاه قبلاً ثبت شده است.')} }else{signup=false;authUi();show('authBox')}};
-function authUi(){$('authTitle').textContent=signup?'ثبت‌نام':'ورود';$('authForm').querySelector('.primary').textContent=signup?'ساخت حساب':'ورود';$('toggle').textContent=signup?'حساب دارم، ورود':'حساب ندارم، ثبت‌نام'}
-$('toggle').onclick=()=>{signup=!signup;authUi()};
+$('auth').onclick=async()=>{if(user){if(admin){show('adminBox')}else{const r=await db.rpc('claim_first_admin');if(r.data){await authState();show('adminBox');await loadAdmin()}else alert('مدیر فروشگاه قبلاً ثبت شده است.')}}else{show('authBox')}};
 $('authForm').onsubmit=async e=>{
- e.preventDefault();$('authMsg').textContent='در حال اتصال...';const email=$('email').value.trim(),password=$('pass').value;
- const r=signup?await db.auth.signUp({email,password}):await db.auth.signInWithPassword({email,password});
- $('authMsg').textContent=r.error?r.error.message:(signup?'ثبت‌نام انجام شد. اگر تأیید ایمیل فعال است ایمیل را بررسی کن.':'ورود انجام شد.');
- if(!r.error)setTimeout(()=>hide('authBox'),700);
+ e.preventDefault();$('authMsg').textContent='در حال ارسال لینک ورود...';const email=$('email').value.trim();
+ const r=await db.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:window.location.href}});
+ $('authMsg').textContent=r.error?r.error.message:'لینک ورود به ایمیل شما ارسال شد. روی لینک بزنید تا وارد شوید.';
 };
 $('orders').onclick=async()=>{show('adminBox');await loadAdmin()};
 $('addProduct').onclick=()=>show('productBox');
@@ -65,7 +62,7 @@ $('productForm').onsubmit=async e=>{
  $('pmsg').textContent=r.error?r.error.message:'محصول ذخیره شد.';if(!r.error){await loadProducts();setTimeout(()=>hide('productBox'),500)}
 };
 $('checkout').onclick=async()=>{
- if(!cart.length)return;if(!user){hide('cartBox');signup=false;authUi();show('authBox');return}
+ if(!cart.length)return;if(!user){hide('cartBox');show('authBox');return}
  const name=prompt('نام گیرنده:'),phone=prompt('شماره تماس:'),address=prompt('آدرس تحویل:');if(!name||!phone||!address)return;
  const sub=cart.reduce((a,x)=>a+x.price*x.qty,0),r=await db.from('orders').insert({user_id:user.id,customer_name:name,customer_phone:phone,delivery_address:address,subtotal:sub,delivery_fee:Number(store.delivery_fee||0),total:sub+Number(store.delivery_fee||0)}).select().single();
  if(r.error)return alert(r.error.message);
