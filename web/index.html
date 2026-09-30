@@ -15,7 +15,7 @@
 <main id="chat" class="chat">
 <section class="welcome">
   <div class="logo">✦</div><h1>سلام عقیل 👋</h1>
-  <p>چت هوش مصنوعی فارسی، با رابط PWA و آماده اتصال به GGUF / llama.cpp.</p>
+  <p>چت هوش مصنوعی فارسی، با رابط PWA و آماده اتصال رایگان به GGUF / llama.cpp.</p>
   <div class="chips"><button data-prompt="یک API با FastAPI بساز">ساخت API با FastAPI</button><button data-prompt="این کد JavaScript را توضیح بده">توضیح JavaScript</button><button data-prompt="یک صفحه ورود Responsive بساز">ساخت صفحه Responsive</button></div>
 </section>
 </main>
@@ -24,9 +24,9 @@
 <dialog id="settings">
 <form method="dialog"><h2>⚙️ تنظیمات هوشمند</h2>
 <label>API URL<input id="apiUrl" value="https://aghill-apk.hf.space/v1/chat/completions" inputmode="url"></label>
-<label>Model<input id="model" value="qwen2.5-coder"></label>
+<label>Model<input id="model" value="qwen2.5-coder-3b"></label>
 <div class="grid"><label>Temperature<input id="temperature" type="number" min="0" max="2" step="0.1" value="0.2"></label><label>Max tokens<input id="maxTokens" type="number" min="64" max="8192" step="64" value="1024"></label></div>
-<p class="hint">رابط برنامه و تاریخچه گفتگو آفلاین هم در دسترس می‌ماند. برای پاسخ واقعی مدل باید API، Worker، Space یا llama.cpp در دسترس باشد.</p>
+<p class="hint">رابط برنامه و تاریخچه گفتگو آفلاین هم در دسترس می‌ماند. برای پاسخ واقعی، API رایگان Hugging Face Space یا یک Worker/llama.cpp باید در دسترس باشد.</p>
 <div class="settings-actions"><button id="testBtn" type="button">🔌 تست اتصال</button><button id="clearBtn" type="button">🗑️ پاک‌کردن تاریخچه</button></div>
 <menu><button type="submit">بستن</button><button id="save" value="default" type="submit">ذخیره</button></menu>
 </form></dialog>
