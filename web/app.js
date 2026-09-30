@@ -43,7 +43,7 @@ async function authState(){
  $('auth').textContent=user?'حساب':'ورود';$('orders').hidden=!admin;
 }
 db.auth.onAuthStateChange(()=>authState());
-$('auth').onclick=()=>{if(user){show('adminBox')}else{signup=false;authUi();show('authBox')}};
+$('auth').onclick=()=>{if(user){if(admin){show('adminBox')}else{const r=await db.rpc('claim_first_admin');if(r.data){await authState();show('adminBox');await loadAdmin()}else alert('مدیر فروشگاه قبلاً ثبت شده است.')} }else{signup=false;authUi();show('authBox')}};
 function authUi(){$('authTitle').textContent=signup?'ثبت‌نام':'ورود';$('authForm').querySelector('.primary').textContent=signup?'ساخت حساب':'ورود';$('toggle').textContent=signup?'حساب دارم، ورود':'حساب ندارم، ثبت‌نام'}
 $('toggle').onclick=()=>{signup=!signup;authUi()};
 $('authForm').onsubmit=async e=>{
