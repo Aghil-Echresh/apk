@@ -16,3 +16,5 @@ Endpoints:
 - `/health`
 - `/v1/models`
 - `/v1/chat/completions`
+
+Connection note: the web client checks `/health` before sending chat requests.
