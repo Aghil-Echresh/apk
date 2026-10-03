@@ -1,0 +1,41 @@
+name: GitHub API Integration Check
+
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  github-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check repository through GitHub REST API
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          echo "Repository: $GITHUB_REPOSITORY"
+          gh api "repos/$GITHUB_REPOSITORY" --jq '{full_name,private,default_branch,html_url}'
+          gh api "repos/$GITHUB_REPOSITORY/commits?per_page=1" --jq '.[0] | {sha, message: .commit.message}'
+          gh api "user" --jq '{login,id}'
+          echo "GitHub REST API integration: OK"
+
+      - name: Save integration status
+        run: |
+          mkdir -p integration-status
+          printf '%s\n' '{' > integration-status/github-api-status.json
+          printf '  "repository": "%s",\n' "$GITHUB_REPOSITORY" >> integration-status/github-api-status.json
+          printf '  "workflow": "%s",\n' "$GITHUB_WORKFLOW" >> integration-status/github-api-status.json
+          printf '  "run_id": "%s",\n' "$GITHUB_RUN_ID" >> integration-status/github-api-status.json
+          printf '  "status": "ok"\n' >> integration-status/github-api-status.json
+          printf '%s\n' '}' >> integration-status/github-api-status.json
+
+      - name: Upload integration status
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-api-status
+          path: integration-status/github-api-status.json
