@@ -1,5 +1,17 @@
-# APK Project
+# مرکز اپلیکیشن‌های عقیل اچرش
 
-Grok Workspace project.
+یک صفحه‌ی وب شیک و واکنش‌گرا برای معرفی و اشتراک‌گذاری اپلیکیشن‌های اندرویدی.
 
-Source: extracted from grok-workspace-1.zip
+## محصول فعلی
+- **Aghil AI Offline** — دستیار هوش مصنوعی آفلاین اندروید
+- موتور: llama.cpp
+- مدل: Qwen2.5-Coder-3B / GGUF
+- ساخت APK با GitHub Actions
+
+## وب‌سایت
+پس از فعال شدن GitHub Pages، سایت از بخش **Settings → Pages** قابل مشاهده است.
+
+## دریافت APK
+نسخه‌های ساخته‌شده از workflow مربوط به Android در بخش Actions قرار می‌گیرند.
+
+ساخته‌شده برای پروژه‌های عقیل اچرش ❤️
