@@ -16,12 +16,14 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalLayoutDirection
 import com.arm.aichat.AiChat
+import com.arm.aichat.InferenceEngine
 import kotlinx.coroutines.launch
 import java.io.File
 
 data class ChatMessage(val text: String, val user: Boolean)
 
 class MainActivity : ComponentActivity() {
+    private var inferenceEngine: InferenceEngine? = null
     private var onModelSelected: ((Uri) -> Unit)? = null
     private val modelPicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { onModelSelected?.invoke(it) }
@@ -58,8 +60,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         runCatching {
-            val engine = AiChat.getInferenceEngine(this)
-            if (engine.state.value is com.arm.aichat.InferenceEngine.State.ModelReady) {
+            val engine = inferenceEngine
+            if (engine?.state?.value is InferenceEngine.State.ModelReady) {
                 engine.cleanUp()
             }
         }
@@ -75,7 +77,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun OfflineChatContent() {
-        val engine = AiChat.getInferenceEngine(this@MainActivity)
+        val engine = remember { AiChat.getInferenceEngine(this@MainActivity).also { inferenceEngine = it } }
         val scope = rememberCoroutineScope()
         var input by remember { mutableStateOf("") }
         var loaded by remember { mutableStateOf(false) }
