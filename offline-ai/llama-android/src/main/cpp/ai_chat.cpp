@@ -437,10 +437,21 @@ Java_com_arm_aichat_internal_InferenceEngineImpl_processUserPrompt(
         LOGw("%s: User prompt too long! Skipped %d tokens!", __func__, skipped_tokens);
     }
 
-    // Keep enough room for generation. Shift old context before decoding a large prompt.
-    const int available = DEFAULT_CONTEXT_SIZE - OVERFLOW_HEADROOM - (int) current_position;
-    if ((int) user_tokens.size() > available && current_position > system_prompt_position) {
+    // Keep the prompt inside the context. Prefer shifting history; if there is no
+    // disposable history, truncate the prompt instead of allowing positions to overflow.
+    int available = DEFAULT_CONTEXT_SIZE - OVERFLOW_HEADROOM - (int) current_position;
+    while ((int) user_tokens.size() > available && current_position > system_prompt_position) {
         shift_context();
+        available = DEFAULT_CONTEXT_SIZE - OVERFLOW_HEADROOM - (int) current_position;
+    }
+    if (available <= 0) {
+        LOGe("%s: No context space remains for user prompt.", __func__);
+        return 2;
+    }
+    if ((int) user_tokens.size() > available) {
+        const int skipped_tokens = (int) user_tokens.size() - available;
+        user_tokens.resize(available);
+        LOGw("%s: Truncated user prompt by %d tokens to fit context.", __func__, skipped_tokens);
     }
 
     const int actual_user_prompt_size = (int) user_tokens.size();
