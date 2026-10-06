@@ -57,3 +57,8 @@ No model weights are committed to this repository; this keeps the Git repository
 ## Important
 
 The first native build requires an internet connection because `bootstrap-llama.sh` downloads the llama.cpp source. Once the APK and model are installed on the phone, inference itself runs locally and does not need internet access.
+
+
+## Final validation
+
+The Android workflow validates the generated APK before publishing the debug artifact. Native inference remains local to the device after a GGUF model is installed.
