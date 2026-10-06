@@ -178,6 +178,10 @@ internal class InferenceEngineImpl private constructor(
                 _state.value = InferenceEngine.State.ModelReady
             } catch (e: Exception) {
                 Log.e(TAG, (e.message ?: "Error loading model") + "\n" + pathToModel, e)
+                // Native load/prepare may allocate resources before reporting an error.
+                // Release them so a retry does not leak memory or leave a half-loaded model.
+                runCatching { unload() }
+                _readyForSystemPrompt = false
                 _state.value = InferenceEngine.State.Error(e)
                 throw e
             }
