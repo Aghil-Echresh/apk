@@ -33,8 +33,8 @@ constexpr int   OVERFLOW_HEADROOM       = 4;
 constexpr int   BATCH_SIZE              = 512;
 constexpr float DEFAULT_SAMPLER_TEMP    = 0.3f;
 
-static llama_model                      * g_model;
-static llama_context                    * g_context;
+static llama_model                      * g_model = nullptr;
+static llama_context                    * g_context = nullptr;
 static llama_batch                        g_batch;
 static common_chat_templates_ptr          g_chat_templates;
 static common_sampler                   * g_sampler;
@@ -429,12 +429,24 @@ Java_com_arm_aichat_internal_InferenceEngineImpl_processUserPrompt(
     }
 
     // Ensure user prompt doesn't exceed the context size by truncating if necessary.
-    const int user_prompt_size = (int) user_tokens.size();
+    const int requested_user_prompt_size = (int) user_tokens.size();
     const int max_batch_size = DEFAULT_CONTEXT_SIZE - OVERFLOW_HEADROOM;
-    if (user_prompt_size > max_batch_size) {
-        const int skipped_tokens = user_prompt_size - max_batch_size;
+    if (requested_user_prompt_size > max_batch_size) {
+        const int skipped_tokens = requested_user_prompt_size - max_batch_size;
         user_tokens.resize(max_batch_size);
         LOGw("%s: User prompt too long! Skipped %d tokens!", __func__, skipped_tokens);
+    }
+
+    // Keep enough room for generation. Shift old context before decoding a large prompt.
+    const int available = DEFAULT_CONTEXT_SIZE - OVERFLOW_HEADROOM - (int) current_position;
+    if ((int) user_tokens.size() > available && current_position > system_prompt_position) {
+        shift_context();
+    }
+
+    const int actual_user_prompt_size = (int) user_tokens.size();
+    if (actual_user_prompt_size <= 0) {
+        LOGe("%s: User prompt has no tokens after truncation.", __func__);
+        return 2;
     }
 
     // Decode user tokens in batches
@@ -443,9 +455,9 @@ Java_com_arm_aichat_internal_InferenceEngineImpl_processUserPrompt(
         return 2;
     }
 
-    // Update position
-    current_position += user_prompt_size;
-    stop_generation_position = current_position + user_prompt_size + n_predict;
+    // Update position using the tokens actually decoded. Do not double-count the prompt.
+    current_position += actual_user_prompt_size;
+    stop_generation_position = current_position + std::max(1, (int) n_predict);
     return 0;
 }
 
@@ -550,12 +562,24 @@ Java_com_arm_aichat_internal_InferenceEngineImpl_unload(JNIEnv * /*unused*/, job
     reset_long_term_states();
     reset_short_term_states();
 
-    // Free up resources
-    common_sampler_free(g_sampler);
+    // Free up resources safely. The app may call unload after a partial load failure.
+    if (g_sampler) {
+        common_sampler_free(g_sampler);
+        g_sampler = nullptr;
+    }
     g_chat_templates.reset();
-    llama_batch_free(g_batch);
-    llama_free(g_context);
-    llama_model_free(g_model);
+    if (g_batch.n_tokens > 0) {
+        llama_batch_free(g_batch);
+        g_batch = {};
+    }
+    if (g_context) {
+        llama_free(g_context);
+        g_context = nullptr;
+    }
+    if (g_model) {
+        llama_model_free(g_model);
+        g_model = nullptr;
+    }
 }
 
 extern "C"
