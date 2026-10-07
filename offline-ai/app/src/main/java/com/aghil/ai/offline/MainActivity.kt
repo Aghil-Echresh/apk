@@ -60,16 +60,18 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         runCatching {
-            val engine = inferenceEngine
-            if (engine?.state?.value is InferenceEngine.State.ModelReady) {
-                engine.cleanUp()
+            inferenceEngine?.let { engine ->
+                if (engine.state.value is InferenceEngine.State.ModelReady) {
+                    engine.cleanUp()
+                }
             }
         }
         super.onDestroy()
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
-    @Composable private fun OfflineChat() {
+    @Composable
+    private fun OfflineChat() {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             OfflineChatContent()
         }
@@ -78,13 +80,34 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun OfflineChatContent() {
-        val engine = remember { AiChat.getInferenceEngine(this@MainActivity).also { inferenceEngine = it } }
+        val engine = remember {
+            AiChat.getInferenceEngine(this@MainActivity).also { inferenceEngine = it }
+        }
+        val engineState by engine.state.collectAsState()
         val scope = rememberCoroutineScope()
         var input by remember { mutableStateOf("") }
-        var loaded by remember { mutableStateOf(false) }
-        var status by remember { mutableStateOf("یک فایل GGUF انتخاب کن") }
+        var status by remember { mutableStateOf("در حال آماده‌سازی موتور هوش مصنوعی…") }
         var modelInfo by remember { mutableStateOf("") }
         val messages = remember { mutableStateListOf<ChatMessage>() }
+
+        val engineReady = engineState is InferenceEngine.State.Initialized ||
+            engineState is InferenceEngine.State.ModelReady
+
+        LaunchedEffect(engineState) {
+            status = when (val state = engineState) {
+                is InferenceEngine.State.Uninitialized,
+                is InferenceEngine.State.Initializing -> "در حال آماده‌سازی موتور هوش مصنوعی…"
+                is InferenceEngine.State.Initialized -> "موتور آماده است؛ یک فایل GGUF انتخاب کن"
+                is InferenceEngine.State.LoadingModel -> "در حال بارگذاری مدل…"
+                is InferenceEngine.State.ProcessingSystemPrompt -> "در حال آماده‌سازی مدل…"
+                is InferenceEngine.State.ProcessingUserPrompt,
+                is InferenceEngine.State.Generating -> "در حال پاسخ…"
+                is InferenceEngine.State.UnloadingModel -> "در حال آزاد کردن مدل…"
+                is InferenceEngine.State.ModelReady -> "مدل آماده است — کاملاً آفلاین"
+                is InferenceEngine.State.Error -> "خطا: ${state.exception.message ?: "خطای ناشناخته"}"
+                is InferenceEngine.State.Benchmarking -> "در حال تست مدل…"
+            }
+        }
 
         Scaffold(topBar = { TopAppBar(title = { Text("🤖 عقیل AI آفلاین") }) }) { pad ->
             Column(Modifier.fillMaxSize().padding(pad).padding(12.dp)) {
@@ -97,60 +120,99 @@ class MainActivity : ComponentActivity() {
                         }
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = {
-                                chooseModel { uri ->
-                                    try {
-                                        val model = copyModel(uri)
-                                        loaded = false
-                                        modelInfo = "مدل نصب شد • ${model.length() / (1024 * 1024)} MB"
-                                        status = "مدل ذخیره شد؛ حالا بارگذاری کن"
-                                    } catch (e: Exception) {
-                                        status = "خطا در نصب مدل: ${e.message}"
+                            Button(
+                                enabled = engineReady,
+                                onClick = {
+                                    chooseModel { uri ->
+                                        try {
+                                            val model = copyModel(uri)
+                                            modelInfo = "مدل نصب شد • ${model.length() / (1024 * 1024)} MB"
+                                            status = "مدل ذخیره شد؛ حالا بارگذاری کن"
+                                        } catch (e: Exception) {
+                                            status = "خطا در نصب مدل: ${e.message}"
+                                        }
                                     }
                                 }
-                            }) { Text("انتخاب GGUF") }
-                            Button(onClick = {
-                                scope.launch {
-                                    try {
-                                        val model = File(filesDir, "models/model.gguf")
-                                        if (!model.exists()) {
-                                            status = "اول یک فایل GGUF انتخاب کن"
-                                            return@launch
+                            ) { Text("انتخاب GGUF") }
+
+                            Button(
+                                enabled = engineReady,
+                                onClick = {
+                                    scope.launch {
+                                        try {
+                                            val model = File(filesDir, "models/model.gguf")
+                                            if (!model.exists()) {
+                                                status = "اول یک فایل GGUF انتخاب کن"
+                                                return@launch
+                                            }
+                                            status = "در حال بارگذاری مدل…"
+                                            if (engine.state.value is InferenceEngine.State.ModelReady) {
+                                                engine.cleanUp()
+                                            }
+                                            engine.loadModel(model.absolutePath)
+                                            engine.setSystemPrompt("تو یک دستیار فارسی، دقیق، مفید و دوستانه هستی.")
+                                            status = "مدل آماده است — کاملاً آفلاین"
+                                        } catch (e: Exception) {
+                                            status = "خطا در بارگذاری: ${e.message}"
                                         }
-                                        status = "در حال بارگذاری مدل…"
-                                        if (engine.state.value is com.arm.aichat.InferenceEngine.State.ModelReady) {
-                                            engine.cleanUp()
-                                        }
-                                        engine.loadModel(model.absolutePath)
-                                        engine.setSystemPrompt("تو یک دستیار فارسی، دقیق، مفید و دوستانه هستی.")
-                                        loaded = true
-                                        status = "مدل آماده است — کاملاً آفلاین"
-                                    } catch (e: Exception) {
-                                        loaded = false
-                                        status = "خطا در بارگذاری: ${e.message}"
                                     }
                                 }
-                            }) { Text("بارگذاری") }
+                            ) { Text("بارگذاری") }
                         }
                     }
                 }
+
                 Spacer(Modifier.height(8.dp))
-                LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+
+                LazyColumn(
+                    Modifier.weight(1f).fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     items(messages) { msg ->
                         Surface(tonalElevation = 2.dp, shape = MaterialTheme.shapes.medium) {
-                            Text(if (msg.user) "شما: ${msg.text}" else "AI: ${msg.text}", Modifier.padding(12.dp))
+                            Text(
+                                if (msg.user) "شما: ${msg.text}" else "AI: ${msg.text}",
+                                Modifier.padding(12.dp)
+                            )
                         }
                     }
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value=input,onValueChange={input=it},Modifier.weight(1f),placeholder={Text("پیامت رو بنوی…")},singleLine=true)
-                    Button(enabled=loaded && input.isNotBlank(), onClick={
-                        val prompt=input.trim(); input=""; messages.add(ChatMessage(prompt,true))
-                        scope.launch { val answer=StringBuilder(); try {
-                            engine.sendUserPrompt(prompt,512).collect { token -> answer.append(token); status="در حال پاسخ…" }
-                            messages.add(ChatMessage(answer.toString(),false)); status="آماده — بدون اینترنت"
-                        } catch(e:Exception) { messages.add(ChatMessage("خطا: ${e.message}",false)); status="خطا" } }
-                    }) { Text("ارسال") }
+
+                val canSend = engineState is InferenceEngine.State.ModelReady && input.isNotBlank()
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = input,
+                        onValueChange = { input = it },
+                        Modifier.weight(1f),
+                        placeholder = { Text("پیامت رو بنوی…") },
+                        singleLine = true,
+                        enabled = engineState is InferenceEngine.State.ModelReady
+                    )
+                    Button(
+                        enabled = canSend,
+                        onClick = {
+                            val prompt = input.trim()
+                            input = ""
+                            messages.add(ChatMessage(prompt, true))
+                            scope.launch {
+                                val answer = StringBuilder()
+                                try {
+                                    engine.sendUserPrompt(prompt, 512).collect { token ->
+                                        answer.append(token)
+                                        status = "در حال پاسخ…"
+                                    }
+                                    messages.add(ChatMessage(answer.toString(), false))
+                                    status = "آماده — بدون اینترنت"
+                                } catch (e: Exception) {
+                                    messages.add(ChatMessage("خطا: ${e.message}", false))
+                                    status = "خطا"
+                                }
+                            }
+                        }
+                    ) { Text("ارسال") }
                 }
             }
         }
