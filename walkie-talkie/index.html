@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101b2b">
+  <meta name="description" content="واکی‌تاکی اینترنتی با کانال و صدای زنده">
+  <title>واکی‌تاکی عقیل</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main>
+  <header><div class="logo">📻</div><h1>واکی‌تاکی عقیل</h1><p>ارتباط صوتی زنده، ساده و سریع</p></header>
+  <section class="card">
+    <label for="server">آدرس سرور (WebSocket)</label>
+    <input id="server" placeholder="wss://your-server.example.com" autocomplete="url">
+    <div class="row">
+      <div><label for="username">نام شما</label><input id="username" maxlength="24" placeholder="مثلاً عقیل"></div>
+      <div><label for="room">نام کانال</label><input id="room" maxlength="32" placeholder="کانال ۱"></div>
+    </div>
+    <div class="row"><button class="btn" id="join">اتصال به کانال</button><button class="btn secondary" id="leave" disabled>قطع اتصال</button></div>
+    <div class="status"><span class="dot" id="dot"></span><span id="status">آمادهٔ اتصال</span></div>
+  </section>
+  <section class="card">
+    <div class="status"><span>👥</span><strong>اعضای آنلاین</strong></div>
+    <div class="peers" id="peers"><span class="empty">هنوز به کانالی متصل نیستید.</span></div>
+    <div class="talkwrap"><button class="talk" id="talk" disabled>🎙️<br>برای صحبت نگه دار<small>با رها کردن دکمه، ارسال صدا متوقف می‌شود</small></button></div>
+    <p class="hint">برای صحبت دکمه را نگه دارید. صدای شما به اعضای همان کانال می‌رسد. استفاده از هدفون پیشنهاد می‌شود.</p>
+  </section>
+  <div class="foot">نسخهٔ آزمایشی · صدای زنده با WebRTC · فقط با افراد مجاز و رضایت‌مند استفاده کنید.</div>
+</main>
+<div id="audio" hidden></div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
