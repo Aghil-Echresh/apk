@@ -1,0 +1,22 @@
+{
+  "name": "aghil-walkie-talkie",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Persian internet walkie-talkie with WebRTC push-to-talk",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "server": "node server.js",
+    "start": "npm run build && node server.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/core": "^7.4.3",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
+    "vite": "^6.4.1"
+  }
+}
