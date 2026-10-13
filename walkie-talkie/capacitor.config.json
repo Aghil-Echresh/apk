@@ -1,0 +1,8 @@
+{
+  "appId": "com.aghilechresh.walkietalkie",
+  "appName": "واکی‌تاکی عقیل",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
