@@ -117,16 +117,32 @@ async function makePeer(id, name, initiator) {
       audio.id = 'audio-' + id;
       audio.autoplay = true;
       audio.playsInline = true;
+      audio.setAttribute('playsinline', '');
       audioEl.append(audio);
     }
-    audio.srcObject = event.streams[0];
-    audio.play().catch(() => status('برای شنیدن صدا، صدای رسانه و مجوزهای گوشی را بررسی کنید', true));
+    // Some Android WebViews provide no stream in event.streams.
+    const incomingStream = event.streams?.[0] || new MediaStream([event.track]);
+    audio.srcObject = incomingStream;
+    event.track.onunmute = () => {
+      audio.play().catch(error => {
+        console.warn('Remote audio playback was blocked', error);
+        status('صدای دریافتی آماده است؛ یک بار روی صفحه بزنید و صدای رسانه را بالا ببرید', true);
+      });
+    };
+    audio.play().catch(error => {
+      console.warn('Remote audio playback was blocked', error);
+      status('صدا وصل شد؛ برای شنیدن، یک بار روی صفحه بزنید و صدای رسانه را بررسی کنید', true);
+    });
   };
 
   pc.onconnectionstatechange = () => {
     if (pc.connectionState === 'failed') {
-      status('ارتباط صوتی با یکی از اعضا برقرار نشد؛ شبکه یا TURN ممکن است لازم باشد', true);
+      status('مسیر صوتی برقرار نشد؛ شبکه یا سرور TURN لازم است', true);
       closePeer(id);
+    } else if (pc.connectionState === 'disconnected') {
+      status('ارتباط صوتی ناپایدار است؛ شبکه را بررسی کنید', true);
+    } else if (pc.connectionState === 'connected') {
+      status('مسیر صوتی برقرار شد', true);
     } else if (pc.connectionState === 'closed') {
       closePeer(id);
     }
@@ -224,7 +240,15 @@ joinBtn.addEventListener('click', async () => {
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       video: false
     });
-    localStream.getAudioTracks().forEach(track => { track.enabled = false; });
+    const audioTracks = localStream.getAudioTracks();
+    if (!audioTracks.length) throw new Error('میکروفون هیچ ترک صوتی برنگرداند');
+    audioTracks.forEach(track => {
+      track.enabled = false;
+      track.onended = () => {
+        if (talking) setTalking(false);
+        status('میکروفون متوقف شد؛ مجوز میکروفون را بررسی کنید');
+      };
+    });
 
     status('در حال اتصال به سرور…');
     const socket = new WebSocket(url);
