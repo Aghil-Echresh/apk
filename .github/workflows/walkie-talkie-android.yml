@@ -22,6 +22,33 @@ jobs:
         run: npm run build
       - name: Add Android platform
         run: npx cap add android
+      - name: Declare Android audio permissions
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          tree = ET.parse(manifest)
+          root = tree.getroot()
+          android = "http://schemas.android.com/apk/res/android"
+          required = (
+              "android.permission.INTERNET",
+              "android.permission.RECORD_AUDIO",
+              "android.permission.MODIFY_AUDIO_SETTINGS",
+          )
+          for permission in required:
+              exists = any(
+                  node.tag == "uses-permission"
+                  and node.get("{" + android + "}name") == permission
+                  for node in root
+              )
+              if not exists:
+                  node = ET.Element("uses-permission")
+                  node.set("{" + android + "}name", permission)
+                  root.insert(0, node)
+          tree.write(manifest, encoding="utf-8", xml_declaration=True)
+          PY
       - name: Sync Android
         run: npx cap sync android
       - uses: actions/setup-java@v4
