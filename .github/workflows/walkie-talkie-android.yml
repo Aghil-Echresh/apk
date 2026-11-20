@@ -32,6 +32,9 @@ jobs:
           tree = ET.parse(manifest)
           root = tree.getroot()
           android = "http://schemas.android.com/apk/res/android"
+          # Preserve the Android prefix expected by the Gradle manifest merger.
+          ET.register_namespace("android", android)
+          ET.register_namespace("tools", "http://schemas.android.com/tools")
           required = (
               "android.permission.INTERNET",
               "android.permission.RECORD_AUDIO",
